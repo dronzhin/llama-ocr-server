@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="/static/style.css">
+    <title>Клиент для OCR</title>
+</head>
+<body>
+    <div class="container">
+        <!-- Левая панель -->
+        <div class="left-panel">
+            <h1>Распознавание текста с изображений (OCR)</h1>
+
+            <!-- Выбор OCR движка -->
+            <div class="engine-selection">
+                <label for="ocrEngine">Выберите движок OCR:</label>
+                <select id="ocrEngine">
+                    <option value="easyocr" id="easyocr" data-engine="easyocr">EasyOCR</option>
+                    <option value="tesseract" id="tesseract" data-engine="tesseract">Tesseract</option>
+                    <option value="paddleocr" id="paddleocr" data-engine="paddleocr">PaddleOCR</option>
+                </select>
+            </div>
+            <br><br>
+
+            <!-- Drag and Drop -->
+            <div id="dropZone" class="drop-zone">
+                Перетащите изображение сюда или <span class="browse-text" onclick="document.getElementById('imageInput').click()">нажмите для выбора</span>
+                <input type="file" id="imageInput" accept="image/*" hidden>
+            </div>
+            <div id="imagePreview" class="image-preview"></div>
+            <button id="recognizeButton" class="recognize-button" disabled onclick="uploadImage()">
+                Распознать
+            </button>
+        </div>
+
+        <!-- Правая панель -->
+        <div class="right-panel">
+            <h2>Распознанный текст:</h2>
+            <div id="outputText"></div>
+        </div>
+    </div>
+    <script src="/static/script.js"></script>
+</body>
+<div id="spinner" class="spinner hidden">
+    <div class="spinner-inner"></div>
+</div>
+</html>
