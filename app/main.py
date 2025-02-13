@@ -1,24 +1,24 @@
+import os
+
+import uvicorn
 from fastapi import FastAPI, File, UploadFile, Form, Request, HTTPException
 from fastapi.responses import JSONResponse, HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from fastapi.middleware.cors import CORSMiddleware
 from io import BytesIO
-import easyocr
-import pytesseract
-from paddleocr import PaddleOCR
-from pydantic import BaseModel
-from typing import List
 from PIL import Image
 import base64
-import numpy as np
 import time
+from pydantic import BaseModel
+from llama_prompt import new_llama
 
 app = FastAPI()
+ollama_url = "http://localhost:11434/v1"
 
 class OCRRequest(BaseModel):
     file: str  # Строка Base64
-    engine: str  # Имя движка OCR
+    engine: str  # Имя движка модели
 
 # Здесь 'directory' должен указывать на папку, где находятся static файлы
 app.mount("/static", StaticFiles(directory="static"), name="static")
@@ -52,29 +52,17 @@ async def get_ocr(request: OCRRequest):
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Ошибка при декодировании изображения: {str(e)}")
 
-    result = {}
-
-    if request.engine == "easyocr":
-        reader = easyocr.Reader(['ru'], gpu=False)
+    if request.engine == "llama3.2:3b":
         start_time = time.time()
-        ocr_result = reader.readtext(np.array(image))
+        reader = new_llama(url = ollama_url, model= "llama3.2:3b", temp = 0.0, content = text)
         execution_time = time.time() - start_time
-        result = {"engine": "easyocr", "execution_time": f"{execution_time:.2f}", "text": "\n".join([r[1] for r in ocr_result])}
+        result = {"engine": "easyocr", "execution_time": f"{execution_time:.2f}", "text": reader}
 
-    elif request.engine == "tesseract":
+    elif request.engine == "llama3.2-vision":
         start_time = time.time()
-        ocr_result = pytesseract.image_to_string(image, lang='rus')
+        reader = new_llama(url = ollama_url, model= "llama3.2:3b", temp = 0.0, image_url = image, content = text)
         execution_time = time.time() - start_time
-        result = {"engine": "tesseract", "execution_time": f"{execution_time:.2f}", "text": ocr_result}
-
-    elif request.engine == "paddleocr":
-        ocr = PaddleOCR(use_angle_cls=True, lang='ru', gpu=False)
-        start_time = time.time()
-        ocr_result = ocr.ocr(np.array(image))
-        execution_time = time.time() - start_time
-        text_blocks = [(item[1][0], item[1][1]) for sublist in ocr_result for item in sublist]
-        chunks = [block for block in text_blocks if len(block) > 0]
-        result = {"engine": "paddleocr", "execution_time": f"{execution_time:.2f}", "text": "\n".join(chunk[0] for chunk in chunks)}
+        result = {"engine": "tesseract", "execution_time": f"{execution_time:.2f}", "text": reader}
 
     else:
         raise HTTPException(status_code=400, detail=f"Неподдерживаемый движок OCR: {request.engine}")
@@ -83,8 +71,8 @@ async def get_ocr(request: OCRRequest):
 
 @app.get("/GetOcrList")
 async def get_ocr_list():
-    engines = ["easyocr", "tesseract", "paddleocr"]
+    engines = ["llama3.2:3b", "llama3.2-vision"]
     return {"available_engines": engines}
 
 if __name__ == '__main__':
-    uvicorn.run("main:app", host="127.0.0.1", port=int(os.environ.get('PORT', 8000)))
+    uvicorn.run("main:app", host="0.0.0.0", port=int(os.environ.get('PORT', 8000)))

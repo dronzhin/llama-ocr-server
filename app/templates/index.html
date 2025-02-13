@@ -3,33 +3,43 @@
 <head>
     <meta charset="UTF-8">
     <link rel="stylesheet" href="/static/style.css">
-    <title>Клиент для OCR</title>
+    <title>Анализ крови в формате Json</title>
 </head>
 <body>
     <div class="container">
         <!-- Левая панель -->
         <div class="left-panel">
-            <h1>Распознавание текста с изображений (OCR)</h1>
+            <h1>Выделение данных анализа крови с картинки или текста</h1>
 
-            <!-- Выбор OCR движка -->
+            <!-- Выбор модели -->
             <div class="engine-selection">
-                <label for="ocrEngine">Выберите движок OCR:</label>
+                <label for="ocrEngine">Выберите модель:</label>
                 <select id="ocrEngine">
-                    <option value="easyocr" id="easyocr" data-engine="easyocr">EasyOCR</option>
-                    <option value="tesseract" id="tesseract" data-engine="tesseract">Tesseract</option>
-                    <option value="paddleocr" id="paddleocr" data-engine="paddleocr">PaddleOCR</option>
+                    <option value="llama3.2:3b">Llama3.2:3b</option>
+                    <option value="llama3.2-vision">Llama3.2-vision</option>
                 </select>
             </div>
             <br><br>
 
             <!-- Drag and Drop -->
-            <div id="dropZone" class="drop-zone">
+            <div id="dropZone" class="drop-zone"
+                 ondrop="dropHandler(event)"
+                 ondragover="dragOverHandler(event)">
                 Перетащите изображение сюда или <span class="browse-text" onclick="document.getElementById('imageInput').click()">нажмите для выбора</span>
-                <input type="file" id="imageInput" accept="image/*" hidden>
+                <input type="file" id="imageInput" accept="image/*" hidden onchange="showImagePreview(event)">
             </div>
             <div id="imagePreview" class="image-preview"></div>
-            <button id="recognizeButton" class="recognize-button" disabled onclick="uploadImage()">
-                Распознать
+            <div class="text-input">
+                <form id="textForm">
+                    <textarea id="TextInput" name="text" rows="20" placeholder="Введите текст для анализа..."></textarea>
+                </form>
+                
+                <form id="promtForm">
+                    <textarea id="PromtInput" name="promt" rows="3" placeholder="Введите promt для анализа..."></textarea>
+                </form>
+            </div>
+            <button id="recognizeButton" class="recognize-button" onclick="uploadData()">
+                Найти показатели
             </button>
         </div>
 
@@ -39,9 +49,5 @@
             <div id="outputText"></div>
         </div>
     </div>
-    <script src="/static/script.js"></script>
 </body>
-<div id="spinner" class="spinner hidden">
-    <div class="spinner-inner"></div>
-</div>
 </html>

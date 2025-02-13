@@ -205,3 +205,26 @@ h1 {
 .hidden {
     display: none;
 }
+
+#textForm {
+    max-width: 1000px; /* Максимальная ширина формы */
+    margin: 20px auto; /* Центрирование формы */
+    padding: 20px; /* Внутренние отступы */
+    border: 1px solid #ccc; /* Рамка */
+    border-radius: 8px; /* Закругленные углы */
+    background-color: #f9f9f9; /* Фоновый цвет */
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1); /* Тень */
+}
+
+/* Стили для текстовых областей */
+textarea {
+    width: 100%; /* Ширина на всю ширину родителя */
+    padding: 10px; /* Внутренние отступы */
+    margin-bottom: 15px; /* Отступ снизу */
+    border: 1px solid #ccc; /* Рамка */
+    border-radius: 4px; /* Закругленные углы */
+    resize: vertical; /* Возможность изменения размера только по вертикали */
+    font-size: 16px; /* Размер шрифта */
+}
+
+
