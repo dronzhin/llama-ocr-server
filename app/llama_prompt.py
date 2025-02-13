@@ -1,15 +1,61 @@
 import ollama
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 import json
 import pandas as pd
+from typing import Optional
+from openai import OpenAI
+
+# Локалхост оллама
+ollama_url = "http://localhost:11434/v1"
+
+
 
 class BloodTest(BaseModel):
-  indicator: str
-  result: str
-  measurement: str | None
+  indicator: str = Field(..., description="Название показателя анализа крови")
+  result: float = Field(..., description="Результат показателя анализа крови")
+  measurement: Optional[str] = Field(..., description="Единица измерения показателя анализа крови")
+
+  class Config:
+      json_schema_extra = {
+          "example": {
+              "indicator": "Креатинин",
+              "result": 79.0,
+              "measurement": "мкмоль/л"
+          }
+      }
 
 class BloodTestList(BaseModel):
   indicators: list[BloodTest]
+
+
+def new_llama(url: str, model: str, temp: float, content: str, image_url: Optional[str] = None):
+    # Инициализация клиента для Ollama
+    client = OpenAI(base_url=url, api_key="ollama")
+
+    try:
+        # Формирование сообщения
+        messages = [{"role": "user", "content": content}]
+
+        # Добавление изображения, если оно предоставлено
+        if image_url:
+            messages.append({"role": "user", "content": f"Изображение: {image_url}"})
+
+        # Запрос к модели
+        response = client.beta.chat.completions.parse(
+            model=model,  # Или другая модель, доступная на Ollama
+            messages=messages,
+            temperature=temp,
+            response_format=BloodTestList
+        )
+
+        # Извлечение ответа
+        json_string = response.choices[0].message.content
+        result = json.loads(json_string)
+        result = result['indicators']
+        return result
+
+    except Exception as e:
+        print(f"Ошибка при работе с Ollama: {e}")
 
 # Запрос к модели Llama 3.2 3B
 def llama3b(message, temperature = 0.0):
@@ -30,8 +76,9 @@ def llama3b(message, temperature = 0.0):
     result = pd.DataFrame(result)
 
     # Заменяем названия столбцов
-    new_columns = ["Название", "Значение", "Ед. Измерения"]
-    result.columns = new_columns
+    if not result.empty:
+        new_columns = ["Название", "Значение", "Ед. Измерения"]
+        result.columns = new_columns
 
     return result
 
@@ -64,6 +111,6 @@ def llama11b(message, path_image, temperature = 0.0):
 
 
 if __name__ == "__main__":
-    text = 'Гамоглобин составляет 3 единицы'
-    res = llama3b(text)
+    text = 'Гемоглобин составляет 3 г/л, хотелось бы побольше, но пока так. Найти в тексте данные анализ крови. Ничего не придумывай'
+    res = new_llama(url = ollama_url, model= "llama3.2:3b", temp = 0.0, content = text)
     print(res)
